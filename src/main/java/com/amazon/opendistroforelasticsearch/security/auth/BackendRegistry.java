@@ -241,6 +241,12 @@ public class BackendRegistry {
     	      return null;
     	  }
 
+        User injectedUser = userInjector.injectUser(request, task, action);
+
+        if(injectedUser != null) {
+            return injectedUser;
+        }
+
         User origPKIUser = new User(sslPrincipal);
         
         if(adminDns.isAdmin(origPKIUser)) {
