@@ -27,6 +27,7 @@
             <outputDirectory>${file.separator}</outputDirectory>
             <includes>
                 <include>tools/**</include>
+                <include>bin/**</include>
             </includes>
             <fileMode>0750</fileMode>
         </fileSet>
