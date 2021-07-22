@@ -71,7 +71,7 @@ public class DlsFlsValveImpl implements DlsFlsRequestValve {
      * @param listener
      * @return false on error
      */
-    public boolean invoke(final ActionRequest request, final ActionListener<?> listener,
+    public boolean invoke(final String action, final ActionRequest request, final ActionListener<?> listener,
             final Map<String,Set<String>> allowedFlsFields,
             final Map<String,Set<String>> maskedFields,
             final Map<String,Set<String>> queries) {
@@ -115,6 +115,11 @@ public class DlsFlsValveImpl implements DlsFlsRequestValve {
 
             if(request instanceof ResizeRequest) {
                 listener.onFailure(new ElasticsearchSecurityException("Resize is not supported when FLS or DLS or Fieldmasking is activated"));
+                return false;
+            }
+
+            if(action.contains("plugins/replication")) {
+                listener.onFailure(new ElasticsearchSecurityException("Cross Cluster Replication is not supported when FLS or DLS or Fieldmasking is activated"));
                 return false;
             }
         }

@@ -49,6 +49,7 @@ import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
 import com.amazon.opendistroforelasticsearch.security.support.OpenDistroSecurityUtils;
 import com.amazon.opendistroforelasticsearch.security.user.User;
 import com.google.common.base.Strings;
+import org.elasticsearch.transport.TransportRequest;
 
 public class UserInjector {
 
@@ -57,13 +58,13 @@ public class UserInjector {
     private final ThreadPool threadPool;
     private final AuditLog auditLog;
     private final XFFResolver xffResolver;
-    private final Boolean injectUserEnabled;
+    private final Boolean injectRESTUserEnabled;
 
     UserInjector(Settings settings, ThreadPool threadPool, AuditLog auditLog, XFFResolver xffResolver) {
         this.threadPool = threadPool;
         this.auditLog = auditLog;
         this.xffResolver = xffResolver;
-        this.injectUserEnabled = settings.getAsBoolean(ConfigConstants.OPENDISTRO_SECURITY_UNSUPPORTED_INJECT_USER_ENABLED, false);
+        this.injectRESTUserEnabled = settings.getAsBoolean(ConfigConstants.OPENDISTRO_SECURITY_UNSUPPORTED_INJECT_USER_ENABLED, false);
 
     }
 
@@ -100,13 +101,13 @@ public class UserInjector {
 
             this.transportAddress = new TransportAddress(iAdress, port);
         }
+
+        public void setTransportAddress(TransportAddress transportAddress) {
+            this.transportAddress = transportAddress;
+        }
     }
 
     InjectedUser getInjectedUser() {
-        if (!injectUserEnabled) {
-            return null;
-        }
-
         String injectedUserString = threadPool.getThreadContext().getTransient(ConfigConstants.OPENDISTRO_SECURITY_INJECTED_USER);
 
         if (log.isDebugEnabled()) {
@@ -176,8 +177,19 @@ public class UserInjector {
         return injectedUser;
     }
 
+    InjectedUser injectUser(TransportRequest transportRequest) {
+        InjectedUser injectedUser = getInjectedUser();
+        if(injectedUser != null && injectedUser.getTransportAddress() == null) {
+            injectedUser.setTransportAddress(transportRequest.remoteAddress());
+        }
+        return injectedUser;
+    }
 
     boolean injectUser(RestRequest request) {
+        if (!injectRESTUserEnabled) {
+            return false;
+        }
+
         InjectedUser injectedUser = getInjectedUser();
         if(injectedUser == null) {
             return false;
